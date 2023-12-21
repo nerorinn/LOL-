@@ -27,7 +27,6 @@ async def Found():
     global wllp
     wllp = await willump.start()
     await wllp.request('POST', '/lol-matchmaking/v1/ready-check/accept')
-    await asyncio.sleep(10)
     await wllp.close()
 
 #启动
@@ -37,6 +36,7 @@ def search():
         print(t1)
         if t1 == 'Found':
             asyncio.run(Found())
+            time.sleep(10)
             t1 = asyncio.run(main())
             if t1 == 'Invalid':
                 os._exit(0)
@@ -47,6 +47,7 @@ def search():
             time.sleep(2)
             continue
         elif t1 == 'Searching':
+            time.sleep(1)
             continue
         else:
             break
