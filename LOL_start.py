@@ -109,10 +109,12 @@ class MyProgram(QMainWindow):
                 continue
             elif state == Searching:
                 self.text_edit.append('状态: 队列中')
-                accept_found(port, headers)
                 time.sleep(1)
                 continue
-
+            elif state == Found:
+                accept_found(port, headers)
+                time.sleep(1)
+                continue                
             print(state)
     def QLineEdit(self, text):
         self.text_edit.append(text)
