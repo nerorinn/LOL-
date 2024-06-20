@@ -8,7 +8,7 @@
 3. 本程序的代码实现遵守 Riot Policies 的规定，提供的功能符合 《英雄联盟》游戏插件公约 的要求。
 4. 本程序是基于 Riot 提供的 League Client Update（LCU）API 开发的工具，其代码与行为均不含任何侵入性的手段，因此在理论上并不会做出任何破坏客户端以及游戏完整性的行为，包括但不限于客户端文件内容的修改或游戏进程内存的读写等。
 5. 使用本程序所产生的一切后果将由您自行承担，我们不对因使用本程序而产生的任何直接或间接损失负责，用户在决定使用本程序时，应充分考虑并自行承担由此产生的所有风险和后果。
-6. 我们保留随时修改本免责声明的权利，请定期查阅此页面以获取最新信息。
-LOL_start.py isn’t endorsed by Riot Games and doesn’t reflect the views or opinions of Riot Games or anyone officially involved in producing or managing League of Legends. League of Legends and Riot Games are trademarks or registered trademarks of Riot Games, Inc. League of Legends © Riot Games, Inc.
+6. 我保留随时修改本免责声明的权利，请定期查阅此页面以获取最新信息。
+7. LOL_start.py isn’t endorsed by Riot Games and doesn’t reflect the views or opinions of Riot Games or anyone officially involved in producing or managing League of Legends. League of Legends and Riot Games are trademarks or registered trademarks of Riot Games, Inc. League of Legends © Riot Games, Inc.
 
   - 禁止一切针对代码的商用行为。
