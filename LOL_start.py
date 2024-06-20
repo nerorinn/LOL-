@@ -5,7 +5,7 @@ import psutil
 import base64
 from urllib.parse import urljoin
 from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QTextEdit
-from PyQt5.QtCore import QDateTime
+from PyQt5.QtCore import QDateTime, pyqtSignal, QObject
 from threading import Thread
 import sys
 
@@ -19,6 +19,15 @@ SEARCH_STATE_URL  = "/lol-lobby/v2/lobby/matchmaking/search-state"
 FOUND_ACCEPT_URL  = "/lol-matchmaking/v1/ready-check/accept"
 SUMMONER_DATA_URL  = "/lol-summoner/v1/current-summoner"
 
+class Logger(QObject):
+    new_log = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+
+    def log(self, message):
+        current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
+        self.new_log.emit(f'{current_time}: {message}')
 
 class MyProgram(QMainWindow):
     def __init__(self):
@@ -47,78 +56,57 @@ class MyProgram(QMainWindow):
         ]
         self.text_edit.setText('\n'.join(tishi))
         self.text_edit.setReadOnly(True)
-        
+
+        self.logger = Logger()
+        self.logger.new_log.connect(self.text_edit.append)
+
         self.auto_click_thread = None
         self.auto_click_running = False
-
-
+    
     def start_auto_click(self):
         if not self.auto_click_running:
             self.text_edit.clear()
-            current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
-            self.text_edit.append(f'{current_time}: 启动')
+            self.logger.log(': 启动')
+            self.start_button.setEnabled(False)
+            self.stop_button.setEnabled(True)
             self.auto_click_running = True
             self.auto_click_thread = Thread(target=self.run_auto_click)
             self.auto_click_thread.start()
             
-            self.start_button.setEnabled(False)
-            self.stop_button.setEnabled(True)
+
             
+    def QLineEdit(self, text):
+        self.text_edit.append(text)
 
     def stop_auto_click(self):
-        current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
-        self.text_edit.append(f'{current_time}: 已停止')
-        self.auto_click_running = False
+        self.logger.log(': 已停止')
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
+        self.auto_click_running = False
+
 
     def run_auto_click(self):
-        #self.text_edit.append('状态: 查找客户端')
         pid = find_league_client_pid()
         if not pid:
-            current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
-            self.text_edit.append(f'{current_time}: 未找到客户端，请确保客户端已启动后点击开始。')
+            self.logger.log(': 未找到客户端，请确保客户端已启动后点击开始。')
             self.stop_auto_click()
         else:
             urllib3.disable_warnings()
             port, headers = get_port_token_headers(pid)
-        if not port and headers:
-            current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
-            self.text_edit.append(f'{current_time}: 未能获取到端口和头信息,软件多半需要更新')
-            self.stop_auto_click()
-        #print(port, headers)
-        #self.text_edit.append('状态: 查找队列状态')
-        
+            if not port and headers:
+                self.logger.log(': 未能获取到端口和头信息,软件多半需要更新')
+                self.stop_auto_click()
+        self.logger.log(': 检测中')
         while self.auto_click_running:   
-            state = get_search_state(port, headers)
             game_pid = find_league_game_pid()
             if game_pid:
-                current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
-                self.text_edit.append(f'{current_time}: 检测到进入游戏自动停止')
+                self.logger.log(': 检测到进入游戏自动停止')
                 self.stop_auto_click()
                 break
-            elif not state:
-                current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
-                self.text_edit.append(f'{current_time}: 出现异常，自动停止')
-                self.stop_auto_click()
-                break
-            elif state == Invalid:
-                current_time = QDateTime.currentDateTime().toString('HH:mm:ss')
-                self.text_edit.append(f'{current_time}: 没在队列等待5秒')
-                time.sleep(5)
-                continue
-            elif state == Searching:
-                self.text_edit.append('状态: 队列中')
-                time.sleep(1)
-                continue
-            elif state == Found:
+            else:
                 accept_found(port, headers)
                 time.sleep(1)
                 continue                
-            print(state)
-    def QLineEdit(self, text):
-        self.text_edit.append(text)
-
 
 #获取客户端pid
 def find_league_client_pid():
@@ -129,14 +117,15 @@ def find_league_client_pid():
     else:
         return None
     
-#获取游戏客户端pid
+#检测游戏是否已经启动
 def find_league_game_pid():
-    process = psutil.pids()
-    for pid in process:
-        if psutil.Process(pid).name() == 'League of Legends.exe':
-            return pid
-    else:
-        return None
+    for pid in psutil.pids():
+        try:
+            if psutil.Process(pid).name() == 'League of Legends.exe':
+                return pid
+        except psutil.NoSuchProcess:
+            continue
+    return None
 
 #获取客户端port和headers
 def get_port_token_headers(pid):
@@ -159,7 +148,7 @@ def get_port_token_headers(pid):
         
     return port, headers
 
-#【没有使用】获取召唤师信息
+#获取召唤师信息
 def get_summoner(port, headers):
     url = urljoin(BASE_URL + port, SUMMONER_DATA_URL)
     try:
@@ -171,7 +160,7 @@ def get_summoner(port, headers):
         print(f"获取召唤师信息时出错: {e}")
         return None
 
-#队列信息 t1
+#【没有使用】队列信息
 def get_search_state(port, headers):
     url = urljoin(BASE_URL + port, SEARCH_STATE_URL)
     try:
